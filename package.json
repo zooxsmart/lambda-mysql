@@ -34,7 +34,9 @@
         "debug": "^4.1.1",
         "knex": "^0.19.2",
         "knex-aws-xray": "0.0.3",
+        "lodash.castarray": "^4.4.0",
         "lodash.has": "^4.5.2",
+        "lodash.isempty": "^4.4.0",
         "mysql": "^2.17.1",
         "objection": "^1.6.9",
         "yn": "^3.1.1"
