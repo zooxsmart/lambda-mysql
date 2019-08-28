@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/zooxsmart/lambda-mysql/compare/1.0.1...1.0.2) (2019-08-28)
+
+
+### Bug Fixes
+
+* add model, internal refactor ([a1bdeb0](https://github.com/zooxsmart/lambda-mysql/commit/a1bdeb0))
+
 ## [1.0.1](https://github.com/zooxsmart/lambda-mysql/compare/1.0.0...1.0.1) (2019-08-24)
 
 
