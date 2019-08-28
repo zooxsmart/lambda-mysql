@@ -28,6 +28,8 @@
     ],
     "dependencies": {
         "@zooxsmart/lambda-util": "^1.0.2",
+        "ajv": "^6.10.2",
+        "ajv-errors": "^1.0.1",
         "aws-xray-sdk": "^2.3.4",
         "debug": "^4.1.1",
         "knex": "^0.19.2",
@@ -48,7 +50,8 @@
         "lint-staged": "^8.1.0"
     },
     "scripts": {
-        "lint": "eslint *.js src/*.js src/**/*.js"
+        "lint": "eslint *.js src/*.js src/**/*.js",
+        "lint-fix": "eslint --fix *.js src/*.js src/**/*.js"
     },
     "commitlint": {
         "extends": [

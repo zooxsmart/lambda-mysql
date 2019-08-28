@@ -1,93 +1,141 @@
-const yn = require('yn');
-const knex = require('./knex');
+/* eslint-disable no-unused-vars,no-empty-function,class-methods-use-this */
+const { NotFound } = require('@zooxsmart/lambda-util').errors;
+const Knex = require('./knex');
 const Query = require('./query');
 const Save = require('./save');
 
-const saveFunc = new Save();
-const queryFunc = new Query();
-
 class Mapper {
-  constructor(config = {}) {
+  constructor(model, config = {}) {
+    this.model = model;
     this.config = {
       client: 'mysql',
       connection: {
-        host: config.host || process.env.MYSQL_HOST,
-        port: config.port || process.env.MYSQL_PORT || 3306,
-        user: config.user || process.env.MYSQL_USER,
-        password: config.password || process.env.MYSQL_PASS,
-        database: config.database || process.env.MYSQL_NAME,
-        connectionLimit: config.connectionLimit || process.env.MYSQL_CONNECTION_LIMIT || 10,
+        port: 3306,
+        connectionLimit: 10,
         timezone: 'Z',
         connectTimeout: 4000,
         dateStrings: true,
-        charset: config.charset || process.env.MYSQL_CHARSET || 'utf8mb4',
+        charset: 'utf8mb4',
       },
       useNullAsDefault: true,
       pool: {
         min: 1,
         max: 30,
       },
+      ...config,
     };
   }
 
   /**
    * @param id
-   * @param model
    * @param {{fields: array, withDeleted: boolean}} query
    * @returns {Knex.QueryBuilder}
    */
-  async fetch(id, model, query) {
-    await knex.getDb(this.config);
+  async fetch(id, query) {
+    const knex = await Knex.getDb(this.config);
 
-    const select = model
-      .query()
-      .where('id', id)
-      .select(query.fields || null);
+    const select = knex(this.model.tableName)
+      .select(query.fields || null)
+      .where('id', id);
 
-    if (typeof model.isSoftDelete !== 'undefined' && yn(query.withDeleted, { default: false }) === false) {
-      select.whereNotDeleted();
+    await this.beforeFetch(select, id, query);
+
+    const result = await select.first();
+
+    if (!result || result.length === 0) {
+      throw new NotFound();
     }
 
-    return select.first();
+    await this.afterFetch(result, id, query);
+
+    return this.model.fromDatabase(result, false);
   }
 
-  async fetchAll(query, model) {
-    await knex.getDb(this.config);
+  async fetchAll(query) {
+    const knex = await Knex.getDb(this.config);
 
-    return queryFunc.withModel(model).withQuery(query);
+    const queryFunc = new Query(knex);
+
+    const result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
+
+    await this.afterFetchAll(result);
+
+    return result.map(entity => this.model.fromDatabase(entity, false));
   }
 
-  async countAll(query, model) {
-    await knex.getDb(this.config);
+  async countAll(query) {
+    const knex = await Knex.getDb(this.config);
 
-    return queryFunc.withModel(model).count(query);
+    const queryFunc = new Query(knex);
+
+    return queryFunc.count(this.model, query, this.beforeCountAll);
   }
 
-  async save(event, context, model) {
-    await knex.getDb(this.config);
+  async create(body) {
+    const knex = await Knex.getDb(this.config);
 
-    return saveFunc.withModel(model).withEvent(event);
+    const saveFunc = new Save(knex);
+
+    return saveFunc.create(
+      this.model,
+      body,
+      (...args) => this.beforeCreate(...args),
+      (...args) => this.afterCreate(...args),
+    );
   }
 
-  /**
-   * @param id
-   * @param model
-   * @param {{hardDelete: boolean}} query
-   * @returns {Knex.QueryBuilder}
-   */
-  async delete(id, model, query) {
-    await knex.getDb(this.config);
+  async update(id, body, query) {
+    const knex = await Knex.getDb(this.config);
 
-    const select = model.query().where('id', id);
+    const saveFunc = new Save(knex);
 
-    if (typeof model.isSoftDelete !== 'undefined' && yn(query.hardDelete, { default: false }) === true) {
-      select.hardDelete();
-    } else {
-      select.delete();
+    return saveFunc.update(
+      this.model,
+      id,
+      body,
+      query,
+      (...args) => this.beforeUpdate(...args),
+      (...args) => this.afterUpdate(...args),
+    );
+  }
+
+  async delete(id) {
+    const knex = await Knex.getDb(this.config);
+
+    const select = knex(this.model.tableName).where('id', id).delete();
+
+    await this.beforeDelete(select, id);
+
+    const result = await select;
+
+    if (!result || result.length === 0) {
+      throw new NotFound();
     }
 
-    return select;
+    await this.afterDelete(result, id);
   }
+
+  async beforeFetch(select, id, query) {}
+
+  async beforeFetchAll(select, query) {}
+
+  async beforeCountAll(select, query) {}
+
+  async beforeCreate(select, data) {}
+
+  async beforeUpdate(select, id, data, query) {}
+
+  async beforeDelete(select, id) {}
+
+  async afterFetch(select, id, query) {}
+
+  async afterFetchAll(result) {}
+
+  async afterCreate(result) {}
+
+  async afterUpdate(result, id, numUpdated) {}
+
+  async afterDelete(select, id) {}
 }
 
 module.exports = Mapper;

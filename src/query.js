@@ -1,7 +1,8 @@
-const yn = require('yn');
 const { BadRequest } = require('@zooxsmart/lambda-util').errors;
 
-module.exports = function Query(options) {
+module.exports = function Query(knex, options) {
+  this.knex = knex;
+
   const opts = options || {};
 
   this.ops = opts.ops || [
@@ -36,18 +37,13 @@ module.exports = function Query(options) {
   return this;
 };
 
-module.exports.prototype.withModel = function withModel(model) {
-  this.model = model;
-  return this;
-};
-
-module.exports.prototype.withQuery = function withQuery(query, maxLimit = 100) {
-  const filter = JSON.parse(query.filter || '{}');
+module.exports.prototype.query = async function query(model, urlQuery, beforeFetchAll, maxLimit = 100) {
+  const filter = JSON.parse(urlQuery.filter || '{}');
   // noinspection JSUnresolvedVariable
-  const fields = query.fields || [];
-  const limit = query.limit || 25;
-  const page = query.page || 1;
-  const order = query.order || null;
+  let fields = urlQuery.fields || null;
+  const limit = urlQuery.limit || 25;
+  const page = urlQuery.page || 1;
+  const order = urlQuery.order || null;
 
   if (limit > maxLimit) {
     throw new BadRequest(`Limit must be less then ${maxLimit}`);
@@ -57,8 +53,11 @@ module.exports.prototype.withQuery = function withQuery(query, maxLimit = 100) {
     throw new BadRequest('Page must be greater than 0');
   }
 
-  const select = this.model
-    .query()
+  if (fields !== null) {
+    fields = fields.split(',');
+  }
+
+  const select = this.knex(model.tableName)
     .select(fields)
     .limit(limit)
     .offset((page - 1) * limit);
@@ -67,23 +66,23 @@ module.exports.prototype.withQuery = function withQuery(query, maxLimit = 100) {
     select.orderBy(order[0], order[1] || 'asc');
   }
 
-  if (typeof this.model.isSoftDelete !== 'undefined' && yn(query.withDeleted, { default: false }) === false) {
-    select.whereNotDeleted();
-  }
+  await this.applyFilter(select, filter, model);
 
-  return this.applyFilter(select, filter);
+  beforeFetchAll(select, urlQuery);
+
+  return select;
 };
 
-module.exports.prototype.count = async function count(query) {
-  const filter = query.filter || {};
+module.exports.prototype.count = async function count(model, query, beforeCountAll) {
+  const filter = JSON.parse(query.filter || '{}');
 
-  const res = this.model.query().count();
+  const res = this.knex(model.tableName).count();
 
-  if (typeof this.model.isSoftDelete !== 'undefined' && yn(query.withDeleted, { default: false }) === false) {
-    res.whereNotDeleted();
-  }
+  await this.applyFilter(res, filter);
 
-  const result = await this.applyFilter(res, filter).first();
+  beforeCountAll(res, query);
+
+  const result = await res.first();
 
   return result['count(*)'];
 };

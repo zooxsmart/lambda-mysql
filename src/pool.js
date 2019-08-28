@@ -10,19 +10,9 @@ if (useXRay) {
   mysql = xray.captureMySQL(mysql);
 }
 
-function createPool() {
+function createPool(config) {
   debug(`Creating pool to ${process.env.MYSQL_HOST} ...`);
-  pool = mysql.createPool({
-    connectionLimit: process.env.MYSQL_CONNECTION_LIMIT || 10,
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASS,
-    database: process.env.MYSQL_NAME,
-    timezone: 'Z',
-    connectTimeout: 4000,
-    dateStrings: true,
-    charset: 'utf8mb4',
-  });
+  pool = mysql.createPool(config);
 
   // Ping database to check for common exception errors.
   pool.getConnection((err, connection) => {
