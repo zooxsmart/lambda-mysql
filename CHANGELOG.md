@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/zooxsmart/lambda-mysql/compare/1.0.2...1.0.3) (2019-08-28)
+
+
+### Bug Fixes
+
+* add soft-delete and unique mixins ([976209f](https://github.com/zooxsmart/lambda-mysql/commit/976209f))
+
 ## [1.0.2](https://github.com/zooxsmart/lambda-mysql/compare/1.0.1...1.0.2) (2019-08-28)
 
 
