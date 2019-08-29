@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/zooxsmart/lambda-mysql/compare/1.0.3...1.0.4) (2019-08-29)
+
+
+### Bug Fixes
+
+* add filter entity on fetch/fetchAll ([b36a6bb](https://github.com/zooxsmart/lambda-mysql/commit/b36a6bb))
+
 ## [1.0.3](https://github.com/zooxsmart/lambda-mysql/compare/1.0.2...1.0.3) (2019-08-28)
 
 
