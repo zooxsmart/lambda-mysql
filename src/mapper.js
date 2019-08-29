@@ -40,11 +40,13 @@ class Mapper {
 
     await this.beforeFetch(select, id, query);
 
-    const result = await select.first();
+    let result = await select.first();
 
     if (!result || result.length === 0) {
       throw new NotFound();
     }
+
+    result = this.model.filter(result);
 
     await this.afterFetch(result, id, query);
 
@@ -57,6 +59,8 @@ class Mapper {
     const queryFunc = new Query(knex);
 
     const result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
+
+    result.map(entity => this.model.filter(entity));
 
     await this.afterFetchAll(result);
 
@@ -127,7 +131,7 @@ class Mapper {
 
   async beforeDelete(select, id) {}
 
-  async afterFetch(select, id, query) {}
+  async afterFetch(result, id, query) {}
 
   async afterFetchAll(result) {}
 

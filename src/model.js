@@ -13,14 +13,18 @@ class Model {
   }
 
   static get updateJsonSchema() {
-    return this.constructor.jsonSchema;
+    return this.jsonSchema;
+  }
+
+  static get filterJsonSchema() {
+    return this.jsonSchema;
   }
 
   static get jsonAttributes() {
     return [];
   }
 
-  static validate(data, schema, ajv = null) {
+  static validate(data, schema = null, ajv = null) {
     if (ajv === null) {
       ajv = new Ajv({
         allErrors: true,
@@ -38,6 +42,23 @@ class Model {
     if (!ajv.validate(schema, data)) {
       throw new ValidationError(JSON.stringify(ajv.errors));
     }
+
+    return data;
+  }
+
+  static filter(data, schema = null, ajv = null) {
+    if (ajv === null) {
+      ajv = new Ajv({
+        allErrors: true,
+        removeAdditional: 'all',
+      });
+    }
+
+    if (schema === null) {
+      schema = this.filterJsonSchema;
+    }
+
+    ajv.validate(schema, data);
 
     return data;
   }
