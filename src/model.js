@@ -77,7 +77,7 @@ class Model {
     const model = new this();
     Object.keys(data).forEach((key) => {
       let value = data[key];
-      if (this.jsonAttributes.indexOf(key) >= 0) {
+      if (this.jsonAttributes.indexOf(key) >= 0 && typeof value === 'string') {
         value = JSON.parse(value);
       }
       model[key] = value;
@@ -89,7 +89,7 @@ class Model {
     const json = {};
     Object.keys(this).forEach((key) => {
       let value = this[key];
-      if (this.constructor.jsonAttributes.indexOf(key) >= 0) {
+      if (this.constructor.jsonAttributes.indexOf(key) >= 0 && typeof value === 'object') {
         value = JSON.stringify(value);
       }
       json[key] = value;
