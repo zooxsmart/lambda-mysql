@@ -60,7 +60,7 @@ class Mapper {
 
     const result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
 
-    result.map(entity => this.model.filter(entity));
+    await result.map(entity => this.model.filter(entity));
 
     await this.afterFetchAll(result);
 

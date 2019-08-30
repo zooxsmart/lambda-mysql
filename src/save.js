@@ -29,6 +29,8 @@ module.exports.prototype.create = async function create(model, body, beforeCreat
     .select()
     .where('id', data.id).first();
 
+  result = model.filter(result);
+
   await afterCreate(result);
 
   return model.fromDatabase(result, false);
@@ -50,9 +52,11 @@ module.exports.prototype.update = async function update(model, id, body, query, 
     throw new NotFound();
   }
 
-  const result = await this.knex(model.tableName)
+  let result = await this.knex(model.tableName)
     .select()
     .where('id', id).first();
+
+  result = model.filter(result);
 
   await afterUpdate(result, id, numUpdated);
 
