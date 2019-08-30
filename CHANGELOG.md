@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/zooxsmart/lambda-mysql/compare/1.0.4...1.0.5) (2019-08-30)
+
+
+### Bug Fixes
+
+* check typeof before json.parse/stringify ([fdba240](https://github.com/zooxsmart/lambda-mysql/commit/fdba240))
+
 ## [1.0.4](https://github.com/zooxsmart/lambda-mysql/compare/1.0.3...1.0.4) (2019-08-29)
 
 
