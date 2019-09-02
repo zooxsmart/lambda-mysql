@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/zooxsmart/lambda-mysql/compare/1.0.6...1.0.7) (2019-09-02)
+
+
+### Bug Fixes
+
+* fix filter collection ([704a063](https://github.com/zooxsmart/lambda-mysql/commit/704a063))
+
 ## [1.0.6](https://github.com/zooxsmart/lambda-mysql/compare/1.0.5...1.0.6) (2019-08-30)
 
 
