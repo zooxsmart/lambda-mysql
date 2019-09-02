@@ -58,9 +58,9 @@ class Mapper {
 
     const queryFunc = new Query(knex);
 
-    const result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
+    let result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
 
-    await result.map(entity => this.model.filter(entity));
+    result = await result.map(entity => this.model.filter(entity));
 
     await this.afterFetchAll(result);
 
