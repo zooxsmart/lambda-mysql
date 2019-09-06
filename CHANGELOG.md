@@ -1,3 +1,10 @@
+## [1.0.8](https://github.com/zooxsmart/lambda-mysql/compare/1.0.7...1.0.8) (2019-09-06)
+
+
+### Bug Fixes
+
+* **query:** add improvements to the query object ([3c1f00c](https://github.com/zooxsmart/lambda-mysql/commit/3c1f00c))
+
 ## [1.0.7](https://github.com/zooxsmart/lambda-mysql/compare/1.0.6...1.0.7) (2019-09-02)
 
 

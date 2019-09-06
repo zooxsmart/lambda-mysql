@@ -1,6 +1,6 @@
 {
     "name": "@zooxsmart/lambda-mysql",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "Zoox Smart MySQL wrapper for lambda usage",
     "main": "src/index.js",
     "author": {
