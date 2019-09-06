@@ -1,132 +1,111 @@
-const { BadRequest } = require('@zooxsmart/lambda-util').errors;
+/* eslint-disable no-underscore-dangle */
+const createError = require('http-errors');
 
-module.exports = function Query(knex, options) {
-  this.knex = knex;
+module.exports = (knex, incomingOptions) => {
+  const options = {
+    ops: {
+      eq: 'eq',
+      gt: 'gt',
+      gte: 'gte',
+      lt: 'lt',
+      lte: 'lte',
+      ne: 'ne',
+      in: 'in',
+      nin: 'nin',
+      like: 'like',
+      null: 'null',
+      nnull: 'nnull',
+      between: 'between',
+      nbetween: 'nbetween',
+      or: 'or',
+      and: 'and',
+    },
 
-  const opts = options || {};
+    alias: {},
+    blacklist: {},
+    whitelist: {},
 
-  this.ops = opts.ops || [
-    'eq',
-    'gt',
-    'gte',
-    'lt',
-    'lte',
-    'ne',
-    'in',
-    'notin',
-    'like',
-    'null',
-    'nnull',
-    'between',
-    'nbetween',
-  ];
-  this.alias = opts.alias || {};
-  this.blacklist = opts.blacklist || {};
-  this.whitelist = opts.whitelist || {};
+    keyRegex: /^[a-zæøå0-9-_.]+$/i,
+    valRegex: /[^a-zæøå0-9-_.* ]/i,
+    arrRegex: /^[a-zæøå0-9-_.]+(\[])?$/i,
 
-  // String Value Parsing
-  opts.string = opts.string || {};
-  this.string = opts.string || {};
-  this.string.toBoolean = typeof opts.string.toBoolean === 'boolean' ? opts.string.toBoolean : true;
-  this.string.toNumber = typeof opts.string.toNumber === 'boolean' ? opts.string.toNumber : true;
+    ...incomingOptions,
+  };
 
-  this.keyRegex = opts.keyRegex || /^[a-zæøå0-9-_.]+$/i;
-  this.valRegex = opts.valRegex || /[^a-zæøå0-9-_.* ]/i;
-  this.arrRegex = opts.arrRegex || /^[a-zæøå0-9-_.]+(\[])?$/i;
+  const applyFilter = (select, filter) => {
+    Object.keys(filter).forEach((k) => {
+      let key = k;
+      const val = filter[key];
 
-  return this;
-};
+      // whitelist
+      if (Object.keys(options.whitelist).length && !options.whitelist[key]) {
+        return;
+      }
 
-module.exports.prototype.query = async function query(model, urlQuery, beforeFetchAll, maxLimit = 100) {
-  const filter = JSON.parse(urlQuery.filter || '{}');
-  // noinspection JSUnresolvedVariable
-  let fields = urlQuery.fields || null;
-  const limit = urlQuery.limit || 25;
-  const page = urlQuery.page || 1;
-  const order = urlQuery.order || null;
+      // blacklist
+      if (options.blacklist[key]) {
+        return;
+      }
 
-  if (limit > maxLimit) {
-    throw new BadRequest(`Limit must be less then ${maxLimit}`);
-  }
+      // alias
+      if (options.alias[key]) {
+        key = this.alias[key];
+      }
 
-  if (page < 1) {
-    throw new BadRequest('Page must be greater than 0');
-  }
-
-  if (fields !== null) {
-    fields = fields.split(',');
-  }
-
-  const select = this.knex(model.tableName)
-    .select(fields)
-    .limit(limit)
-    .offset((page - 1) * limit);
-
-  if (order !== null) {
-    select.orderBy(order[0], order[1] || 'asc');
-  }
-
-  await this.applyFilter(select, filter, model);
-
-  beforeFetchAll(select, urlQuery);
-
-  return select;
-};
-
-module.exports.prototype.count = async function count(model, query, beforeCountAll) {
-  const filter = JSON.parse(query.filter || '{}');
-
-  const res = this.knex(model.tableName).count();
-
-  await this.applyFilter(res, filter);
-
-  beforeCountAll(res, query);
-
-  const result = await res.first();
-
-  return result['count(*)'];
-};
-
-module.exports.prototype.applyFilter = function applyFilter(select, filter) {
-  Object.keys(filter).forEach((k) => {
-    let key = k;
-    const val = filter[key];
-    // normalize array keys
-    if (val instanceof Array) {
-      key = key.replace(/\[]$/, '');
-    }
-
-    // whitelist
-    if (Object.keys(this.whitelist).length && !this.whitelist[key]) {
-      return;
-    }
-
-    // blacklist
-    if (this.blacklist[key]) {
-      return;
-    }
-
-    // alias
-    if (this.alias[key]) {
-      key = this.alias[key];
-    }
-
-    // string key
-    if (typeof val === 'string' && !this.keyRegex.test(key)) {
-      return;
+      // string key
+      if (typeof val === 'string' && !options.keyRegex.test(key)) {
+        return;
+      }
 
       // array key
-    }
-    if (val instanceof Array && !this.arrRegex.test(key)) {
-      return;
-    }
+      if (val instanceof Array && !options.arrRegex.test(key)) {
+        return;
+      }
 
-    // array key
-    if (typeof val === 'object') {
-      Object.keys(val).forEach((subk) => {
-        const subkey = subk;
-        const subval = val[subkey];
-        if (this.ops.indexOf(subkey) >= 0) {
+      if (key === options.ops.null) {
+        // noinspection JSUnresolvedFunction
+        select.whereNull(val);
+        return;
+      }
+
+      if (key === options.ops.nnull) {
+        // noinspection JSUnresolvedFunction
+        select.whereNotNull(val);
+        return;
+      }
+
+      if (key === options.ops.or) {
+        // eslint-disable-next-line func-names
+        select.where(function () {
+          const that = this;
+          val.forEach((val2) => {
+            // noinspection JSUnresolvedFunction
+            applyFilter(that._bool('or'), val2);
+          });
+        });
+        return;
+      }
+
+      if (key === options.ops.and) {
+        // eslint-disable-next-line func-names
+        select.where(function () {
+          const that = this;
+          val.forEach((val2) => {
+            applyFilter(that, val2);
+          });
+        });
+        return;
+      }
+
+      if (typeof val === 'object') {
+        Object.keys(val).forEach((subk) => {
+          const subkey = subk;
+          const subval = val[subkey];
+
+          if (Object.keys(options.ops).indexOf(subkey) < 0) {
+            throw new Error(`Invalid operand ${subkey}`);
+          }
+
           switch (subkey) {
             case 'like':
               select.where(key, 'like', subval);
@@ -147,43 +126,76 @@ module.exports.prototype.applyFilter = function applyFilter(select, filter) {
               select.where(key, '<=', subval);
               break;
             case 'ne':
+              // noinspection JSUnresolvedFunction
               select.whereNot(key, subval);
               break;
             case 'in':
+              // noinspection JSUnresolvedFunction
               select.whereIn(key, subval);
               break;
             case 'nin':
+              // noinspection JSUnresolvedFunction
               select.whereNotIn(key, subval);
               break;
-            case 'null':
-              select.whereNull(key);
-              break;
-            case 'nnull':
-              select.whereNotNull(key);
-              break;
             case 'between':
+              // noinspection JSUnresolvedFunction
               select.whereBetween(key, subval);
               break;
             case 'nbetween':
+              // noinspection JSUnresolvedFunction
               select.whereNotBetween(key, subval);
               break;
             default:
           }
-        } else {
-          throw new Error(`Invalid operand ${subkey}`);
-        }
-      });
+        });
 
-      return;
+        return;
+      }
+
+      // value must be a string
+      if (typeof val !== 'string') {
+        return;
+      }
+
+      select.where(key, val);
+    });
+
+    return select;
+  };
+
+  return async (model, urlQuery, beforeFetchAll, maxLimit = 100) => {
+    const filter = JSON.parse(urlQuery.filter || '{}');
+    // noinspection JSUnresolvedVariable
+    let fields = urlQuery.fields || null;
+    const limit = urlQuery.limit || 25;
+    const page = urlQuery.page || 1;
+    const order = urlQuery.order || null;
+
+    if (limit > maxLimit) {
+      throw new createError.BadRequest(`Limit must be less then ${maxLimit}`);
     }
 
-    // value must be a string
-    if (typeof val !== 'string') {
-      return;
+    if (page < 1) {
+      throw new createError.BadRequest('Page must be greater than 0');
     }
 
-    select.where(key, val);
-  });
+    if (fields !== null) {
+      fields = fields.split(',');
+    }
 
-  return select;
+    const select = knex(model.tableName)
+      .select(fields)
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    if (order !== null) {
+      select.orderBy(order[0], order[1] || 'asc');
+    }
+
+    applyFilter(select, filter);
+
+    await beforeFetchAll(select, urlQuery);
+
+    return select;
+  };
 };

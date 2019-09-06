@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars,no-empty-function,class-methods-use-this */
-const { NotFound } = require('@zooxsmart/lambda-util').errors;
+const createError = require('http-errors');
 const Knex = require('./knex');
 const Query = require('./query');
 const Save = require('./save');
@@ -43,7 +43,7 @@ class Mapper {
     let result = await select.first();
 
     if (!result || result.length === 0) {
-      throw new NotFound();
+      throw new createError.NotFound();
     }
 
     result = this.model.filter(result);
@@ -56,9 +56,7 @@ class Mapper {
   async fetchAll(query) {
     const knex = await Knex.getDb(this.config);
 
-    const queryFunc = new Query(knex);
-
-    let result = await queryFunc.query(this.model, query, (...args) => this.beforeFetchAll(...args));
+    let result = await Query(knex)(this.model, query, (...args) => this.beforeFetchAll(...args));
 
     result = await result.map(entity => this.model.filter(entity));
 
@@ -70,9 +68,12 @@ class Mapper {
   async countAll(query) {
     const knex = await Knex.getDb(this.config);
 
-    const queryFunc = new Query(knex);
+    const result = await Query(knex)(this.model, query, async (select, query2) => {
+      await this.beforeFetchAll(select, query2);
+      select.count();
+    });
 
-    return queryFunc.count(this.model, query, this.beforeCountAll);
+    return result[0]['count(*)'];
   }
 
   async create(body) {
@@ -113,7 +114,7 @@ class Mapper {
     const result = await select;
 
     if (!result || result.length === 0) {
-      throw new NotFound();
+      throw new createError.NotFound();
     }
 
     await this.afterDelete(result, id);

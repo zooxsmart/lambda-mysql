@@ -32,6 +32,7 @@
         "ajv-errors": "^1.0.1",
         "aws-xray-sdk": "^2.3.4",
         "debug": "^4.1.1",
+        "http-errors": "^1.7.3",
         "knex": "^0.19.2",
         "knex-aws-xray": "0.0.3",
         "lodash.castarray": "^4.4.0",
