@@ -1,3 +1,10 @@
+## [1.0.9](https://github.com/zooxsmart/lambda-mysql/compare/1.0.8...1.0.9) (2019-09-12)
+
+
+### Bug Fixes
+
+* migrate errors to http-errors ([dfb8598](https://github.com/zooxsmart/lambda-mysql/commit/dfb8598))
+
 ## [1.0.8](https://github.com/zooxsmart/lambda-mysql/compare/1.0.7...1.0.8) (2019-09-06)
 
 
