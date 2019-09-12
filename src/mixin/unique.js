@@ -2,7 +2,7 @@
 const isEmpty = require('lodash.isempty');
 const castArray = require('lodash.castarray');
 const util = require('util');
-const { ConflictError } = require('@zooxsmart/lambda-util').errors;
+const createError = require('http-errors');
 
 module.exports = (incomingOptions) => {
   if (isEmpty(incomingOptions.fields)) {
@@ -41,7 +41,7 @@ module.exports = (incomingOptions) => {
       const errors = this.parseErrors(rows);
 
       if (!isEmpty(errors)) {
-        throw new ConflictError(
+        throw new createError.Conflict(
           JSON.stringify({
             data: errors,
             message: 'Unique Validation Failed',

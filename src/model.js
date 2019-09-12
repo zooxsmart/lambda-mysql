@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this,no-param-reassign */
-const { ValidationError } = require('@zooxsmart/lambda-util').errors;
+const createError = require('http-errors');
 const Ajv = require('ajv');
 const AjvErrors = require('ajv-errors');
 
@@ -40,7 +40,7 @@ class Model {
     }
 
     if (!ajv.validate(schema, data)) {
-      throw new ValidationError(JSON.stringify(ajv.errors));
+      throw new createError.UnprocessableEntity(JSON.stringify(ajv.errors));
     }
 
     return data;

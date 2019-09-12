@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
-const { NotFound } = require('@zooxsmart/lambda-util').errors;
 const has = require('lodash.has');
+const createError = require('http-errors');
 
 module.exports = function Save(knex) {
   this.knex = knex;
@@ -49,7 +49,7 @@ module.exports.prototype.update = async function update(model, id, body, query, 
 
   const numUpdated = await res.update(data);
   if (numUpdated === 0) {
-    throw new NotFound();
+    throw new createError.NotFound();
   }
 
   let result = await this.knex(model.tableName)
