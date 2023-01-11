@@ -33,7 +33,7 @@
         "aws-xray-sdk": "^2.3.4",
         "debug": "^4.1.1",
         "http-errors": "^1.7.3",
-        "knex": "^0.19.2",
+        "knex": "^2.4.0",
         "knex-aws-xray": "0.0.3",
         "lodash.castarray": "^4.4.0",
         "lodash.has": "^4.5.2",
